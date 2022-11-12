@@ -6,7 +6,6 @@ import {
 } from "../src/serviceBus/index.ts";
 
 function getEnvVars() {
-  console.log(Deno.env.toObject());
   const testServiceBusUrl = Deno.env.get("SBUS_URL");
 
   if (!testServiceBusUrl) {

@@ -1,5 +1,10 @@
 name: Deno
 
+env:
+  SBUS_URL: ${{ secrets.SBUS_URL }}
+  SBUS_POLICY_NAME: ${{ secrets.SBUS_POLICY_NAME }}
+  SBUS_POLICY_KEY: ${{ secrets.SBUS_POLICY_KEY }}
+
 on:
   push:
     branches: [main]
