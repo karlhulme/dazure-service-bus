@@ -1,2 +1,2 @@
 export * from "./convertServiceBusKeyToCryptoKey.ts";
-export * from "./postMessageToQueue.ts";
+export * from "./postMessagesToQueue.ts";

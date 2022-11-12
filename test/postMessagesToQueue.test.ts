@@ -2,36 +2,47 @@ import { assertRejects } from "../deps.ts";
 
 import {
   convertServiceBusKeyToCryptoKey,
-  postMessageToQueue,
+  postMessagesToQueue,
 } from "../src/serviceBus/index.ts";
 
-const testServiceBusUrl = Deno.env.get("SBUS_URL");
+function getEnvVars() {
+  const testServiceBusUrl = Deno.env.get("SBUS_URL");
 
-if (!testServiceBusUrl) {
-  throw new Error("SBUS_URL is not defined.");
+  if (!testServiceBusUrl) {
+    throw new Error("SBUS_URL is not defined.");
+  }
+
+  const testPolicyName = Deno.env.get("SBUS_POLICY_NAME");
+
+  if (!testPolicyName) {
+    throw new Error("SBUS_POLICY_NAME is not defined.");
+  }
+
+  return {
+    testServiceBusUrl,
+    testPolicyName,
+  };
 }
 
-const testPolicyName = Deno.env.get("SBUS_POLICY_NAME");
+function getServiceBusCryptoKey() {
+  const testPolicyKey = Deno.env.get("SBUS_POLICY_KEY");
 
-if (!testPolicyName) {
-  throw new Error("SBUS_POLICY_NAME is not defined.");
+  if (!testPolicyKey) {
+    throw new Error("SBUS_POLICY_KEY is not defined.");
+  }
+
+  return convertServiceBusKeyToCryptoKey(testPolicyKey);
 }
-
-const testPolicyKey = Deno.env.get("SBUS_POLICY_KEY");
-
-if (!testPolicyKey) {
-  throw new Error("SBUS_POLICY_KEY is not defined.");
-}
-
-console.log("Importing key.");
-const cryptoKey = await convertServiceBusKeyToCryptoKey(testPolicyKey);
 
 Deno.test("A message can be posted to a queue.", async () => {
-  await postMessageToQueue({
-    serviceBusUri: testServiceBusUrl,
+  const envVars = getEnvVars();
+  const cryptoKey = await getServiceBusCryptoKey();
+
+  await postMessagesToQueue({
+    serviceBusUri: envVars.testServiceBusUrl,
     queueName: "test",
     cryptoKey,
-    sharedAccessPolicyName: testPolicyName,
+    sharedAccessPolicyName: envVars.testPolicyName,
     messages: [{
       content: {
         hello: "world",
@@ -48,12 +59,16 @@ Deno.test("A message can be posted to a queue.", async () => {
 });
 
 Deno.test("A message with an invalid policy name cannot be posted to a queue.", async () => {
+  const envVars = getEnvVars();
+  const cryptoKey = await getServiceBusCryptoKey();
+
   await assertRejects(() =>
-    postMessageToQueue({
-      serviceBusUri: testServiceBusUrl,
+    postMessagesToQueue({
+      serviceBusUri: envVars.testServiceBusUrl,
       queueName: "test",
       cryptoKey,
       sharedAccessPolicyName: "invalid",
+
       messages: [{
         content: {
           hello: "world",

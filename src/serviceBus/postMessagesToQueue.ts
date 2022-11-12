@@ -28,7 +28,7 @@ export interface PostMessagesToQueueMessageBrokerProperties {
  * Posts a message to a queue.  Returns false if the document
  * does not exist.  In all other cases an error is raised.
  */
-export async function postMessageToQueue(
+export async function postMessagesToQueue(
   props: PostMessagesToQueueProps,
 ): Promise<void> {
   const authHeader = await createSharedAccessAuthHeader(
