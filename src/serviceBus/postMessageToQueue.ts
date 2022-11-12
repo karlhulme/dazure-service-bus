@@ -1,5 +1,4 @@
 import { createSharedAccessAuthHeader } from "./createSharedAccessAuthHeader.ts";
-import { handleServiceBusTransitoryErrors } from "./handleServiceBusTransitoryErrors.ts";
 import { serviceBusRetryable } from "./serviceBusRetryable.ts";
 
 export interface PostMessagesToQueueProps {
@@ -56,8 +55,6 @@ export async function postMessageToQueue(
         ),
       },
     );
-
-    handleServiceBusTransitoryErrors(response);
 
     if (!response.ok) {
       throw new Error(
