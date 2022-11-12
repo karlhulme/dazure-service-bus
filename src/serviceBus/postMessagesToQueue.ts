@@ -1,32 +1,92 @@
 import { createSharedAccessAuthHeader } from "./createSharedAccessAuthHeader.ts";
 import { serviceBusRetryable } from "./serviceBusRetryable.ts";
 
+/**
+ * The properties to enqueue a set of messages.
+ */
 export interface PostMessagesToQueueProps {
+  /**
+   * The uri to the service bus resource.
+   */
   serviceBusUri: string;
+
+  /**
+   * The name of a queue.
+   */
   queueName: string;
+
+  /**
+   * The name of a shared access policy.
+   */
   sharedAccessPolicyName: string;
+
+  /**
+   * A crypto key generated based on the key of the named
+   * shared access policy.
+   */
   cryptoKey: CryptoKey;
+
+  /**
+   * An array of messages to enqueue.
+   */
   messages: PostMessagesToQueuePropsMessage[];
 }
 
+/**
+ * A message to be enqueued.
+ */
 export interface PostMessagesToQueuePropsMessage {
-  content: Record<string, unknown>;
+  /**
+   * The content of the message.  If a non-string is specified
+   * then it will be passed to JSON.stringify.
+   */
+  content: Record<string, unknown> | string;
+
+  /**
+   * The broker properties for the message.
+   */
   brokerProperties?: PostMessagesToQueueMessageBrokerProperties;
+
+  /**
+   * The custom user properties for the message.
+   */
   userProperties?: Record<string, string>;
 }
 
+/**
+ * The broker properties.
+ */
 export interface PostMessagesToQueueMessageBrokerProperties {
+  /**
+   * The correlation id.
+   */
   CorrelationId?: string;
-  ContentType?: "application/json";
+
+  /**
+   * The label for the message.
+   */
   Label?: string;
+
+  /**
+   * The partition key for the message.
+   */
   PartitionKey?: string;
+
+  /**
+   * The id of the session.
+   */
   SessionId?: string;
+
+  /**
+   * The length of time that the message should live.
+   */
   TimeToLiveTimeSpan?: string;
 }
 
 /**
  * Posts a message to a queue.  Returns false if the document
  * does not exist.  In all other cases an error is raised.
+ * @param props A property bag.
  */
 export async function postMessagesToQueue(
   props: PostMessagesToQueueProps,
@@ -48,8 +108,15 @@ export async function postMessagesToQueue(
         },
         body: JSON.stringify(
           props.messages.map((m) => ({
-            Body: JSON.stringify(m.content),
-            BrokerProperties: m.brokerProperties,
+            Body: typeof m.content === "string"
+              ? m.content
+              : JSON.stringify(m.content),
+            BrokerProperties: {
+              ...m.brokerProperties,
+              ContentType: typeof m.content === "string"
+                ? "text/plain; charset=UTF-8"
+                : "application/json",
+            },
             UserProperties: m.userProperties,
           })),
         ),

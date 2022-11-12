@@ -34,7 +34,28 @@ function getServiceBusCryptoKey() {
   return convertServiceBusKeyToCryptoKey(testPolicyKey);
 }
 
-Deno.test("A message can be posted to a queue.", async () => {
+Deno.test("A text message can be posted to a queue.", async () => {
+  const envVars = getEnvVars();
+  const cryptoKey = await getServiceBusCryptoKey();
+
+  await postMessagesToQueue({
+    serviceBusUri: envVars.testServiceBusUrl,
+    queueName: "test",
+    cryptoKey,
+    sharedAccessPolicyName: envVars.testPolicyName,
+    messages: [{
+      content: "This is a text message",
+      brokerProperties: {
+        TimeToLiveTimeSpan: "0.00:10:00",
+      },
+      userProperties: {
+        Priority: "Medium",
+      },
+    }],
+  });
+});
+
+Deno.test("A JSON message can be posted to a queue.", async () => {
   const envVars = getEnvVars();
   const cryptoKey = await getServiceBusCryptoKey();
 
@@ -49,7 +70,6 @@ Deno.test("A message can be posted to a queue.", async () => {
       },
       brokerProperties: {
         TimeToLiveTimeSpan: "0.00:10:00",
-        ContentType: "application/json",
       },
       userProperties: {
         Priority: "Medium",
@@ -75,7 +95,6 @@ Deno.test("A message with an invalid policy name cannot be posted to a queue.", 
         },
         brokerProperties: {
           TimeToLiveTimeSpan: "0.00:10:00",
-          ContentType: "application/json",
         },
         userProperties: {
           Priority: "Medium",
