@@ -3,7 +3,7 @@ import { serviceBusRetryable } from "./serviceBusRetryable.ts";
 /**
  * The properties to enqueue a set of messages.
  */
-export interface PostMessagesToQueueProps {
+export interface PostMessagesToQueueProps<Content> {
   /**
    * A header generated using the createSharedAccessAuthHeader function.
    */
@@ -22,17 +22,17 @@ export interface PostMessagesToQueueProps {
   /**
    * An array of messages to enqueue.
    */
-  messages: PostMessagesToQueuePropsMessage[];
+  messages: PostMessagesToQueuePropsMessage<Content>[];
 }
 
 /**
  * A message to be enqueued.
  */
-export interface PostMessagesToQueuePropsMessage {
+export interface PostMessagesToQueuePropsMessage<Content> {
   /**
    * The content of the message that will be JSON.stringified.
    */
-  content: unknown;
+  content: Content;
 
   /**
    * The broker properties for the message.
@@ -81,8 +81,8 @@ export interface PostMessagesToQueueMessageBrokerProperties {
  * Posts an array of messages to a queue.
  * @param props A property bag.
  */
-export async function postMessagesToQueue(
-  props: PostMessagesToQueueProps,
+export async function postMessagesToQueue<Content>(
+  props: PostMessagesToQueueProps<Content>,
 ): Promise<void> {
   await serviceBusRetryable(async () => {
     const response = await fetch(

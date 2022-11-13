@@ -32,7 +32,7 @@ export interface PullMessageFromQueueProps {
 /**
  * Represents a message pulled from a queue but not yet deleted.
  */
-export interface PeekedMessage {
+export interface PeekedMessage<Content> {
   /**
    * The id of the message.
    */
@@ -47,16 +47,16 @@ export interface PeekedMessage {
   /**
    * The content of the message.
    */
-  content: unknown;
+  content: Content;
 }
 
 /**
  * Pulls the next message from the queue.
  * @param props A property bag.
  */
-export async function pullMessageFromQueue(
+export async function pullMessageFromQueue<Content>(
   props: PullMessageFromQueueProps,
-): Promise<PeekedMessage | null> {
+): Promise<PeekedMessage<Content> | null> {
   const timeoutInSecs = props.timeoutInSeconds || DEFAULT_TIMEOUT_IN_SECONDS;
 
   const response = await fetch(

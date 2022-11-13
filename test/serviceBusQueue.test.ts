@@ -6,13 +6,21 @@ import {
 } from "../src/serviceBus/index.ts";
 import { drainQueue, getAuthHeader, getEnvVars, sleep } from "./shared.test.ts";
 
+interface HelloMessage {
+  hello: string;
+}
+
+interface LateMessage {
+  late: string;
+}
+
 Deno.test("A message can be posted to a queue, pulled from a queue and then deleted.", async () => {
   await drainQueue();
 
   const envVars = getEnvVars();
   const authHeader = await getAuthHeader();
 
-  await postMessagesToQueue({
+  await postMessagesToQueue<HelloMessage>({
     authorizationHeader: authHeader,
     serviceBusUri: envVars.testServiceBusUrl,
     queueName: "test",
@@ -26,7 +34,7 @@ Deno.test("A message can be posted to a queue, pulled from a queue and then dele
     }],
   });
 
-  const msg = await pullMessageFromQueue({
+  const msg = await pullMessageFromQueue<HelloMessage>({
     authorizationHeader: authHeader,
     serviceBusUri: envVars.testServiceBusUrl,
     queueName: "test",
@@ -56,7 +64,7 @@ Deno.test("A pull request will wait for a message to arrive.", async () => {
 
   // Initiate the pull request but do not wait on it
   // because there is nothing for it to receive yet.
-  const pullPromise = pullMessageFromQueue({
+  const pullPromise = pullMessageFromQueue<LateMessage>({
     authorizationHeader: authHeader,
     serviceBusUri: envVars.testServiceBusUrl,
     queueName: "test",
@@ -65,7 +73,7 @@ Deno.test("A pull request will wait for a message to arrive.", async () => {
 
   await sleep(5 * 1000);
 
-  await postMessagesToQueue({
+  await postMessagesToQueue<LateMessage>({
     authorizationHeader: authHeader,
     serviceBusUri: envVars.testServiceBusUrl,
     queueName: "test",
@@ -87,7 +95,7 @@ Deno.test("Using an invalid authorisation header prevents a message from being p
   const envVars = getEnvVars();
 
   await assertRejects(() =>
-    postMessagesToQueue({
+    postMessagesToQueue<HelloMessage | LateMessage>({
       authorizationHeader: "invalid",
       serviceBusUri: envVars.testServiceBusUrl,
       queueName: "test",
