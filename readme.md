@@ -14,9 +14,10 @@ Access the scripts for the specific required resource. For example:
 
 Support for:
 
-- Importing a shared access policy key
-- Generating a shared-access-signature authorization header
-- Posting a batch of messages
+- Importing a shared access policy key.
+- Generating a shared-access-signature authorization header.
+- Posting a batch of messages.
+- Pulling and then subsequently deleting a message once processed.
 
 ## Commands
 
