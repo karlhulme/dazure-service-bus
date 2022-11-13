@@ -1,10 +1,14 @@
-import { createSharedAccessAuthHeader } from "./createSharedAccessAuthHeader.ts";
 import { serviceBusRetryable } from "./serviceBusRetryable.ts";
 
 /**
  * The properties to enqueue a set of messages.
  */
 export interface PostMessagesToQueueProps {
+  /**
+   * A header generated using the createSharedAccessAuthHeader function.
+   */
+  authorizationHeader: string;
+
   /**
    * The uri to the service bus resource.
    */
@@ -14,17 +18,6 @@ export interface PostMessagesToQueueProps {
    * The name of a queue.
    */
   queueName: string;
-
-  /**
-   * The name of a shared access policy.
-   */
-  sharedAccessPolicyName: string;
-
-  /**
-   * A crypto key generated based on the key of the named
-   * shared access policy.
-   */
-  cryptoKey: CryptoKey;
 
   /**
    * An array of messages to enqueue.
@@ -37,10 +30,9 @@ export interface PostMessagesToQueueProps {
  */
 export interface PostMessagesToQueuePropsMessage {
   /**
-   * The content of the message.  If a non-string is specified
-   * then it will be passed to JSON.stringify.
+   * The content of the message that will be JSON.stringified.
    */
-  content: Record<string, unknown> | string;
+  content: unknown;
 
   /**
    * The broker properties for the message.
@@ -48,7 +40,9 @@ export interface PostMessagesToQueuePropsMessage {
   brokerProperties?: PostMessagesToQueueMessageBrokerProperties;
 
   /**
-   * The custom user properties for the message.
+   * The custom user properties for the message.  We currently don't
+   * extract these because we can't easily distinguish between user
+   * properties and regular headers.
    */
   userProperties?: Record<string, string>;
 }
@@ -84,38 +78,27 @@ export interface PostMessagesToQueueMessageBrokerProperties {
 }
 
 /**
- * Posts a message to a queue.  Returns false if the document
- * does not exist.  In all other cases an error is raised.
+ * Posts an array of messages to a queue.
  * @param props A property bag.
  */
 export async function postMessagesToQueue(
   props: PostMessagesToQueueProps,
 ): Promise<void> {
-  const authHeader = await createSharedAccessAuthHeader(
-    props.serviceBusUri,
-    props.sharedAccessPolicyName,
-    props.cryptoKey,
-  );
-
   await serviceBusRetryable(async () => {
     const response = await fetch(
       `${props.serviceBusUri}/${props.queueName}/messages`,
       {
         method: "POST",
         headers: {
-          Authorization: authHeader,
+          Authorization: props.authorizationHeader,
           "Content-Type": "application/vnd.microsoft.servicebus.json",
         },
         body: JSON.stringify(
           props.messages.map((m) => ({
-            Body: typeof m.content === "string"
-              ? m.content
-              : JSON.stringify(m.content),
+            Body: JSON.stringify(m.content),
             BrokerProperties: {
               ...m.brokerProperties,
-              ContentType: typeof m.content === "string"
-                ? "text/plain; charset=UTF-8"
-                : "application/json",
+              ContentType: "application/json",
             },
             UserProperties: m.userProperties,
           })),
