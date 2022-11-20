@@ -11,20 +11,20 @@ import { encodeBase64 } from "../../deps.ts";
  * https://<resource-name>.servicebus.windows.net.
  * @param sharedAccessPolicyName The name of the shared access policy.
  * @param cryptoKey A crypto key.
- * @param validityTimeInSeconds The number of seconds that the header
- * should be valid for.  If not supplied, then the service bus
- * recommended default of 15 minutes is used.
+ * @param validityTimeInMilliseconds The number of milliseconds that the header
+ * should be valid for.
  */
 export async function createSharedAccessAuthHeader(
   serviceBusUri: string,
   sharedAccessPolicyName: string,
   cryptoKey: CryptoKey,
-  validityTimeInSeconds?: number,
+  validityTimeInMilliseconds: number,
 ) {
   const encodedUri = encodeURIComponent(serviceBusUri);
-  const ttlInSeconds = validityTimeInSeconds || (60 * 15); // 15 minutes by default.
-  const expiry = Math.round(Date.now() / 1000) + ttlInSeconds;
-  const signature = encodedUri + "\n" + expiry;
+  const expiryInSeconds = Math.round(
+    (Date.now() + validityTimeInMilliseconds) / 1000,
+  );
+  const signature = encodedUri + "\n" + expiryInSeconds;
 
   const encoder = new TextEncoder();
   const signatureBuffer = encoder.encode(signature);
@@ -41,6 +41,6 @@ export async function createSharedAccessAuthHeader(
 
   return "SharedAccessSignature sr=" + encodedUri +
     "&sig=" + encodedSignatureHash +
-    "&se=" + expiry +
+    "&se=" + expiryInSeconds +
     "&skn=" + sharedAccessPolicyName;
 }

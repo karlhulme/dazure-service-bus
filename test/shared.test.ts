@@ -42,6 +42,7 @@ export async function getAuthHeader() {
     envVars.testServiceBusUrl,
     envVars.testPolicyName,
     cryptoKey,
+    1000 * 60 * 15, // 15 minutes
   );
 }
 

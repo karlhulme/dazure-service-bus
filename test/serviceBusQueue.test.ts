@@ -1,10 +1,17 @@
 import { assertEquals, assertRejects } from "../deps.ts";
 import {
+  createCachedSharedAccessAuthHeader,
   deleteMessageFromQueue,
   postMessagesToQueue,
   pullMessageFromQueue,
 } from "../src/serviceBus/index.ts";
-import { drainQueue, getAuthHeader, getEnvVars, sleep } from "./shared.test.ts";
+import {
+  drainQueue,
+  getAuthHeader,
+  getEnvVars,
+  getServiceBusCryptoKey,
+  sleep,
+} from "./shared.test.ts";
 
 interface HelloMessage {
   hello: string;
@@ -13,6 +20,27 @@ interface HelloMessage {
 interface LateMessage {
   late: string;
 }
+
+Deno.test("A share access auth header is cached.", async () => {
+  const envVars = getEnvVars();
+  const cryptoKey = await getServiceBusCryptoKey();
+
+  const header = await createCachedSharedAccessAuthHeader(
+    envVars.testServiceBusUrl,
+    envVars.testPolicyName,
+    cryptoKey,
+  );
+
+  await sleep(1000);
+
+  const header2 = await createCachedSharedAccessAuthHeader(
+    envVars.testServiceBusUrl,
+    envVars.testPolicyName,
+    cryptoKey,
+  );
+
+  assertEquals(header, header2);
+});
 
 Deno.test("A message can be posted to a queue, pulled from a queue and then deleted.", async () => {
   await drainQueue();
