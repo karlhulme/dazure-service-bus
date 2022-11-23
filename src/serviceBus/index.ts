@@ -3,4 +3,5 @@ export * from "./createCachedSharedAccessAuthHeader.ts";
 export * from "./createSharedAccessAuthHeader.ts";
 export * from "./deleteMessageFromQueue.ts";
 export * from "./postMessagesToQueue.ts";
+export * from "./processMessageQueue.ts";
 export * from "./pullMessageFromQueue.ts";

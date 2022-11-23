@@ -57,7 +57,7 @@ Deno.test("A message can be posted to a queue, pulled from a queue and then dele
         hello: "world",
       },
       brokerProperties: {
-        TimeToLiveTimeSpan: "0.00:00:30",
+        TimeToLiveTimeSpan: "0.00:30:00",
       },
     }],
   });
@@ -66,10 +66,8 @@ Deno.test("A message can be posted to a queue, pulled from a queue and then dele
     authorizationHeader: authHeader,
     serviceBusUri: envVars.testServiceBusUrl,
     queueName: "test",
-    timeoutInSeconds: 30,
+    timeoutInSeconds: 300,
   });
-
-  assertEquals(typeof msg, "object");
 
   assertEquals(msg!.content, {
     hello: "world",

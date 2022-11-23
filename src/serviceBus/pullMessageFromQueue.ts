@@ -1,3 +1,5 @@
+import { PeekedMessage } from "./PeekedMessage.ts";
+
 /**
  * The default number of seconds to wait for a new message
  * to arrive before the pull message request returns null.
@@ -8,6 +10,11 @@ const DEFAULT_TIMEOUT_IN_SECONDS = 60;
  * The properties to dequeue a set of messages.
  */
 export interface PullMessageFromQueueProps {
+  /**
+   * An abort controller to abandon the message pull.
+   */
+  signal?: AbortSignal;
+
   /**
    * A header generated using the createSharedAccessAuthHeader function.
    */
@@ -30,27 +37,6 @@ export interface PullMessageFromQueueProps {
 }
 
 /**
- * Represents a message pulled from a queue but not yet deleted.
- */
-export interface PeekedMessage<Content> {
-  /**
-   * The id of the message.
-   */
-  messageId: string;
-
-  /**
-   * The lock token that can be used to delete the message
-   * once successfully processed.
-   */
-  lockToken: string;
-
-  /**
-   * The content of the message.
-   */
-  content: Content;
-}
-
-/**
  * Pulls the next message from the queue.
  * @param props A property bag.
  */
@@ -66,6 +52,7 @@ export async function pullMessageFromQueue<Content>(
       headers: {
         Authorization: props.authorizationHeader,
       },
+      signal: props.signal,
     },
   );
 
