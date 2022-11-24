@@ -125,9 +125,10 @@ export async function processMessageQueue<Message>(
             msgProcPromises.splice(index, 1);
           });
         }
-      } catch {
+      } catch (err) {
         // Ignore errors when retrieving messages and keep running, but allow the
         // service some to recover.
+        console.log("Unable to retrieve messages", err);
         await delay(RETRIEVE_MESSAGE_FAILURE_WAIT_IN_MILLISECONDS);
       }
     } else {
@@ -173,6 +174,6 @@ async function processMessage<Message>(
     // being removed.  After X deliveries the queue will move it to the
     // dead-letter queue automatically.  This will also happen if the source
     // is not recognised.
-    console.log((err as Error).message, msg);
+    console.log(`Unable to process msg id ${msg.messageId}.`, err);
   }
 }
