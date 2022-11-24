@@ -21,14 +21,14 @@ export interface PullMessageFromQueueProps {
   authorizationHeader: string;
 
   /**
-   * The uri to the service bus resource.
+   * The url to the service bus resource.
    */
-  serviceBusUri: string;
+  serviceBusUrl: string;
 
   /**
    * The name of a queue.
    */
-  queueName: string;
+  serviceBusQueueName: string;
 
   /**
    * The amount of time to wait for a message to become available.
@@ -46,7 +46,7 @@ export async function pullMessageFromQueue<Content>(
   const timeoutInSecs = props.timeoutInSeconds || DEFAULT_TIMEOUT_IN_SECONDS;
 
   const response = await fetch(
-    `${props.serviceBusUri}/${props.queueName}/messages/head?timeout=${timeoutInSecs}`,
+    `${props.serviceBusUrl}/${props.serviceBusQueueName}/messages/head?timeout=${timeoutInSecs}`,
     {
       method: "POST",
       headers: {
@@ -58,7 +58,7 @@ export async function pullMessageFromQueue<Content>(
 
   if (!response.ok) {
     throw new Error(
-      `Unable to query for messages from ${props.serviceBusUri}/${props.queueName}/messages/head. (${response.status})\n${await response
+      `Unable to query for messages from ${props.serviceBusUrl}/${props.serviceBusQueueName}/messages/head. (${response.status})\n${await response
         .text()}`,
     );
   }

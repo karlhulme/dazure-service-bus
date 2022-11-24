@@ -61,16 +61,16 @@ export async function drainQueue() {
   while (true) {
     const msg = await pullMessageFromQueue({
       authorizationHeader: authHeader,
-      serviceBusUri: envVars.testServiceBusUrl,
-      queueName: "test",
+      serviceBusUrl: envVars.testServiceBusUrl,
+      serviceBusQueueName: "test",
       timeoutInSeconds: 1, // Short timeout because we just want messages already present.
     });
 
     if (msg) {
       await deleteMessageFromQueue({
         authorizationHeader: authHeader,
-        serviceBusUri: envVars.testServiceBusUrl,
-        queueName: "test",
+        serviceBusUrl: envVars.testServiceBusUrl,
+        serviceBusQueueName: "test",
         messageId: msg.messageId,
         lockToken: msg.lockToken,
       });

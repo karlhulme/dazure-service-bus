@@ -10,14 +10,14 @@ export interface PostMessagesToQueueProps<Content> {
   authorizationHeader: string;
 
   /**
-   * The uri to the service bus resource.
+   * The url to the service bus resource.
    */
-  serviceBusUri: string;
+  serviceBusUrl: string;
 
   /**
    * The name of a queue.
    */
-  queueName: string;
+  serviceBusQueueName: string;
 
   /**
    * An array of messages to enqueue.
@@ -86,7 +86,7 @@ export async function postMessagesToQueue<Content>(
 ): Promise<void> {
   await serviceBusRetryable(async () => {
     const response = await fetch(
-      `${props.serviceBusUri}/${props.queueName}/messages`,
+      `${props.serviceBusUrl}/${props.serviceBusQueueName}/messages`,
       {
         method: "POST",
         headers: {
@@ -108,7 +108,7 @@ export async function postMessagesToQueue<Content>(
 
     if (!response.ok) {
       throw new Error(
-        `Unable to post message to ${props.serviceBusUri}/${props.queueName}/messages. (${response.status})\n${await response
+        `Unable to post message to ${props.serviceBusUrl}/${props.serviceBusQueueName}/messages. (${response.status})\n${await response
           .text()}`,
       );
     }

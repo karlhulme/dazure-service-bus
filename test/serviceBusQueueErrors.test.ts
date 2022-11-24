@@ -12,8 +12,8 @@ Deno.test("Using an invalid authorisation header prevents a message from being p
   await assertRejects(() =>
     postMessagesToQueue({
       authorizationHeader: "invalid",
-      serviceBusUri: envVars.testServiceBusUrl,
-      queueName: "test",
+      serviceBusUrl: envVars.testServiceBusUrl,
+      serviceBusQueueName: "test",
       messages: [{
         content: {
           hello: "world",
@@ -35,8 +35,8 @@ Deno.test("Using an invalid authorisation header prevents a message from being p
   await assertRejects(() =>
     pullMessageFromQueue({
       authorizationHeader: "invalid",
-      serviceBusUri: envVars.testServiceBusUrl,
-      queueName: "test",
+      serviceBusUrl: envVars.testServiceBusUrl,
+      serviceBusQueueName: "test",
       // Use default timeout to cover that test.
     })
   );
@@ -48,8 +48,8 @@ Deno.test("Using an invalid authorisation header prevents a message from being d
   await assertRejects(() =>
     deleteMessageFromQueue({
       authorizationHeader: "invalid",
-      serviceBusUri: envVars.testServiceBusUrl,
-      queueName: "test",
+      serviceBusUrl: envVars.testServiceBusUrl,
+      serviceBusQueueName: "test",
       lockToken: "123",
       messageId: "123",
     })

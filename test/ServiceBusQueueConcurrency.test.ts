@@ -1,6 +1,11 @@
 import { assert, delay } from "../deps.ts";
 import { postMessagesToQueue, processMessageQueue } from "../src/index.ts";
-import { drainQueue, getAuthHeader, getEnvVars } from "./shared.test.ts";
+import {
+  drainQueue,
+  getAuthHeader,
+  getEnvVars,
+  getServiceBusCryptoKey,
+} from "./shared.test.ts";
 
 interface NumberedMessage {
   id: number;
@@ -10,14 +15,15 @@ Deno.test("A queue can process one message at a time by default.", async () => {
   await drainQueue();
 
   const envVars = getEnvVars();
+  const cryptoKey = await getServiceBusCryptoKey();
   const authHeader = await getAuthHeader();
 
   // Test with 3 messages
   for (let i = 1; i <= 3; i++) {
     await postMessagesToQueue<NumberedMessage>({
       authorizationHeader: authHeader,
-      serviceBusUri: envVars.testServiceBusUrl,
-      queueName: "test",
+      serviceBusUrl: envVars.testServiceBusUrl,
+      serviceBusQueueName: "test",
       messages: [{
         content: {
           id: i,
@@ -32,8 +38,9 @@ Deno.test("A queue can process one message at a time by default.", async () => {
 
   const processingMsgQueue = processMessageQueue<NumberedMessage>({
     signal: abortController.signal,
-    serviceBusAuthHeader: authHeader,
-    serviceBusUri: envVars.testServiceBusUrl,
+    cryptoKey,
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusPolicyName: envVars.testPolicyName,
     serviceBusQueueName: "test",
     handler: async (msg) => {
       ops.push(`${msg.id} START`);
@@ -62,14 +69,15 @@ Deno.test("A queue can process multiple messages concurrently up to a specified 
   await drainQueue();
 
   const envVars = getEnvVars();
+  const cryptoKey = await getServiceBusCryptoKey();
   const authHeader = await getAuthHeader();
 
   // Test with 3 messages, 2 to run concurrently, and one to be made to wait.
   for (let i = 1; i <= 3; i++) {
     await postMessagesToQueue<NumberedMessage>({
       authorizationHeader: authHeader,
-      serviceBusUri: envVars.testServiceBusUrl,
-      queueName: "test",
+      serviceBusUrl: envVars.testServiceBusUrl,
+      serviceBusQueueName: "test",
       messages: [{
         content: {
           id: i,
@@ -84,8 +92,9 @@ Deno.test("A queue can process multiple messages concurrently up to a specified 
 
   const processingMsgQueue = processMessageQueue<NumberedMessage>({
     signal: abortController.signal,
-    serviceBusAuthHeader: authHeader,
-    serviceBusUri: envVars.testServiceBusUrl,
+    cryptoKey,
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusPolicyName: envVars.testPolicyName,
     serviceBusQueueName: "test",
     maxConcurrentMessages: 2,
     handler: async (msg) => {
@@ -116,12 +125,13 @@ Deno.test("A message that throws an error will be considered processed (although
   await drainQueue();
 
   const envVars = getEnvVars();
+  const cryptoKey = await getServiceBusCryptoKey();
   const authHeader = await getAuthHeader();
 
   await postMessagesToQueue<NumberedMessage>({
     authorizationHeader: authHeader,
-    serviceBusUri: envVars.testServiceBusUrl,
-    queueName: "test",
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusQueueName: "test",
     messages: [{
       content: {
         id: -1,
@@ -135,8 +145,9 @@ Deno.test("A message that throws an error will be considered processed (although
 
   const processingMsgQueue = processMessageQueue<NumberedMessage>({
     signal: abortController.signal,
-    serviceBusAuthHeader: authHeader,
-    serviceBusUri: envVars.testServiceBusUrl,
+    cryptoKey,
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusPolicyName: envVars.testPolicyName,
     serviceBusQueueName: "test",
     // deno-lint-ignore require-await
     handler: async (msg) => {
@@ -159,15 +170,16 @@ Deno.test("Keep polling the service bus even if the connection fails.", async ()
   await drainQueue();
 
   const envVars = getEnvVars();
-  const authHeader = await getAuthHeader();
+  const cryptoKey = await getServiceBusCryptoKey();
 
   const abortController = new AbortController();
 
   // Use an invalid auth header to cause the polling to fail, but it should keep trying.
   const processingMsgQueue = processMessageQueue<NumberedMessage>({
     signal: abortController.signal,
-    serviceBusAuthHeader: authHeader + "invalid",
-    serviceBusUri: envVars.testServiceBusUrl,
+    cryptoKey,
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusPolicyName: "invalid",
     serviceBusQueueName: "test",
     handler: async () => {},
   });

@@ -1,5 +1,6 @@
 import { assertEquals, assertRejects } from "../deps.ts";
 import {
+  clearSharedAccessAuthHeaderCache,
   createCachedSharedAccessAuthHeader,
   deleteMessageFromQueue,
   postMessagesToQueue,
@@ -21,14 +22,18 @@ interface LateMessage {
   late: string;
 }
 
-Deno.test("A share access auth header is cached.", async () => {
+Deno.test("A shared access auth header is cached with explicit expiry window and validity time.", async () => {
   const envVars = getEnvVars();
   const cryptoKey = await getServiceBusCryptoKey();
+
+  clearSharedAccessAuthHeaderCache();
 
   const header = await createCachedSharedAccessAuthHeader(
     envVars.testServiceBusUrl,
     envVars.testPolicyName,
     cryptoKey,
+    undefined, // not used if a new key is generated
+    1000 * 60, // create with 60 seconds of validity
   );
 
   await sleep(1000);
@@ -37,6 +42,8 @@ Deno.test("A share access auth header is cached.", async () => {
     envVars.testServiceBusUrl,
     envVars.testPolicyName,
     cryptoKey,
+    1000 * 10, // renew when less than 10 seconds validity remaining
+    undefined, // not used if an existing key is found.
   );
 
   assertEquals(header, header2);
@@ -50,8 +57,8 @@ Deno.test("A message can be posted to a queue, pulled from a queue and then dele
 
   await postMessagesToQueue<HelloMessage>({
     authorizationHeader: authHeader,
-    serviceBusUri: envVars.testServiceBusUrl,
-    queueName: "test",
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusQueueName: "test",
     messages: [{
       content: {
         hello: "world",
@@ -64,8 +71,8 @@ Deno.test("A message can be posted to a queue, pulled from a queue and then dele
 
   const msg = await pullMessageFromQueue<HelloMessage>({
     authorizationHeader: authHeader,
-    serviceBusUri: envVars.testServiceBusUrl,
-    queueName: "test",
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusQueueName: "test",
     timeoutInSeconds: 300,
   });
 
@@ -75,8 +82,8 @@ Deno.test("A message can be posted to a queue, pulled from a queue and then dele
 
   await deleteMessageFromQueue({
     authorizationHeader: authHeader,
-    serviceBusUri: envVars.testServiceBusUrl,
-    queueName: "test",
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusQueueName: "test",
     messageId: msg!.messageId,
     lockToken: msg!.lockToken,
   });
@@ -92,8 +99,8 @@ Deno.test("A pull request will wait for a message to arrive.", async () => {
   // because there is nothing for it to receive yet.
   const pullPromise = pullMessageFromQueue<LateMessage>({
     authorizationHeader: authHeader,
-    serviceBusUri: envVars.testServiceBusUrl,
-    queueName: "test",
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusQueueName: "test",
     timeoutInSeconds: 30,
   });
 
@@ -101,8 +108,8 @@ Deno.test("A pull request will wait for a message to arrive.", async () => {
 
   await postMessagesToQueue<LateMessage>({
     authorizationHeader: authHeader,
-    serviceBusUri: envVars.testServiceBusUrl,
-    queueName: "test",
+    serviceBusUrl: envVars.testServiceBusUrl,
+    serviceBusQueueName: "test",
     messages: [{
       content: {
         late: "msg",
@@ -123,8 +130,8 @@ Deno.test("Using an invalid authorisation header prevents a message from being p
   await assertRejects(() =>
     postMessagesToQueue<HelloMessage | LateMessage>({
       authorizationHeader: "invalid",
-      serviceBusUri: envVars.testServiceBusUrl,
-      queueName: "test",
+      serviceBusUrl: envVars.testServiceBusUrl,
+      serviceBusQueueName: "test",
       messages: [{
         content: {
           hello: "world",

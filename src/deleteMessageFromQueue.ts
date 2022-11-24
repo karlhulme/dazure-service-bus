@@ -8,14 +8,14 @@ export interface DeleteMessageFromQueueProps {
   authorizationHeader: string;
 
   /**
-   * The uri to the service bus resource.
+   * The url to the service bus resource.
    */
-  serviceBusUri: string;
+  serviceBusUrl: string;
 
   /**
    * The name of a queue.
    */
-  queueName: string;
+  serviceBusQueueName: string;
 
   /**
    * The id of the message to delete.
@@ -36,7 +36,7 @@ export async function deleteMessageFromQueue(
   props: DeleteMessageFromQueueProps,
 ): Promise<void> {
   const response = await fetch(
-    `${props.serviceBusUri}/${props.queueName}/messages/${props.messageId}/${props.lockToken}`,
+    `${props.serviceBusUrl}/${props.serviceBusQueueName}/messages/${props.messageId}/${props.lockToken}`,
     {
       method: "DELETE",
       headers: {
@@ -47,7 +47,7 @@ export async function deleteMessageFromQueue(
 
   if (!response.ok) {
     throw new Error(
-      `Unable to delete message ${props.serviceBusUri}/${props.queueName}/${props.messageId}. (${response.status})\n${await response
+      `Unable to delete message ${props.serviceBusUrl}/${props.serviceBusQueueName}/${props.messageId}. (${response.status})\n${await response
         .text()}`,
     );
   }

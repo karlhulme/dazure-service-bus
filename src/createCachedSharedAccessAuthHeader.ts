@@ -4,7 +4,7 @@ import { createSharedAccessAuthHeader } from "./createSharedAccessAuthHeader.ts"
  * The amount of time that should be remaining on the authorisation
  * header before a new header is built.  Currently 3 minutes.
  */
-const EXPIRY_WINDOW_IN_MILLISECONDS = 1000 * 60 * 3;
+const DEFAULT_EXPIRY_WINDOW_IN_MILLISECONDS = 1000 * 60 * 3;
 
 /**
  * The amount of time that a header should remain valid.
@@ -36,34 +36,45 @@ interface CachedAuthHeader {
 const cache = new Map<string, CachedAuthHeader>();
 
 /**
+ * Empties the cache of shared access auth headers.
+ */
+export function clearSharedAccessAuthHeaderCache() {
+  cache.clear();
+}
+
+/**
  * Returns a string that can be used as the Authorization
  * header when making a request to a service bus service.
- * The policy should be registered with the given serviceUri.
+ * The policy should be registered with the given serviceUrl.
  * If the policy is registered with a specific queue or topic
- * then the serviceUri must also reference the specific queue
+ * then the serviceUrl must also reference the specific queue
  * or topic.  This function will return a cached header if there
  * is more than EXPIRY_WINDOW_IN_MILLISECONDS remaining on the
  * header.
- * @param serviceBusUri The uri to the service bus resource, for example
+ * @param serviceBusUrl The uri to the service bus resource, for example
  * https://app-name.servicebus.windows.net.
  * @param sharedAccessPolicyName The name of a shared access policy.
  * @param cryptoKey A crypto key.
+ * @param expiryWindowTimeInMilliseconds The number of milliseconds remaining
+ * on an authorisation header before it is regenerated.
  * @param validityTimeInMilliseconds The number of milliseconds that the header
  * should be valid for.  If not supplied, then the service bus
  * recommended default of 15 minutes is used.
  */
 export async function createCachedSharedAccessAuthHeader(
-  serviceBusUri: string,
+  serviceBusUrl: string,
   sharedAccessPolicyName: string,
   cryptoKey: CryptoKey,
+  expiryWindowTimeInMilliseconds?: number,
   validityTimeInMilliseconds?: number,
 ) {
-  const cacheKey = `${serviceBusUri}#${sharedAccessPolicyName}`;
+  const cacheKey = `${serviceBusUrl}#${sharedAccessPolicyName}`;
 
   const cachedItem = cache.get(cacheKey);
 
   if (cachedItem) {
-    const cutoffTimestamp = Date.now() + EXPIRY_WINDOW_IN_MILLISECONDS;
+    const cutoffTimestamp = Date.now() +
+      (expiryWindowTimeInMilliseconds || DEFAULT_EXPIRY_WINDOW_IN_MILLISECONDS);
 
     // Check that the header is due to expire after our cut-off.
     if (cachedItem.expiryTimestamp > cutoffTimestamp) {
@@ -75,7 +86,7 @@ export async function createCachedSharedAccessAuthHeader(
     DEFAULT_VALIDITY_IN_MILLISECONDS;
 
   const newHeader = await createSharedAccessAuthHeader(
-    serviceBusUri,
+    serviceBusUrl,
     sharedAccessPolicyName,
     cryptoKey,
     validityTimeInMillisecondsOrDefault,

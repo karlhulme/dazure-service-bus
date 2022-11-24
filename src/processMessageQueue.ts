@@ -2,6 +2,7 @@ import { delay } from "../deps.ts";
 import { pullMessageFromQueue } from "./pullMessageFromQueue.ts";
 import { deleteMessageFromQueue } from "./deleteMessageFromQueue.ts";
 import { PeekedMessage } from "./PeekedMessage.ts";
+import { createCachedSharedAccessAuthHeader } from "./createCachedSharedAccessAuthHeader.ts";
 
 /**
  * By default process one message at a time.
@@ -38,7 +39,7 @@ interface ProcessMessageQueueProps<Message> {
    * The url of the service bus instance, for example
    * https://my-app.servicebus.windows.net
    */
-  serviceBusUri: string;
+  serviceBusUrl: string;
 
   /**
    * The name of the queue to process.
@@ -46,10 +47,23 @@ interface ProcessMessageQueueProps<Message> {
   serviceBusQueueName: string;
 
   /**
-   * An authorisation header, typically generated using the
-   * createCachedSharedAccessAuthHeader.
+   * The name of the shared access policy that is used
+   * to access the queue.
    */
-  serviceBusAuthHeader: string;
+  serviceBusPolicyName: string;
+
+  /**
+   * The crypto key that conains the service bus key.
+   * Typically produced using the convertServiceBusKeyToCryptoKey function.
+   */
+  cryptoKey: CryptoKey;
+
+  /**
+   * The number of milliseconds remaining on an authorisation header
+   * before it is regenerated.  This should be considerably longer
+   * than the message lock time defined for the queue.
+   */
+  expiryWindowTimeInMilliseconds?: number;
 
   /**
    * A handler function that will process the message.  If
@@ -80,16 +94,29 @@ export async function processMessageQueue<Message>(
   while (!props.signal || !props.signal?.aborted) {
     if (msgProcPromises.length < maxConcurrentMessages) {
       try {
+        const authorizationHeader = await createCachedSharedAccessAuthHeader(
+          props.serviceBusUrl,
+          props.serviceBusPolicyName,
+          props.cryptoKey,
+          props.expiryWindowTimeInMilliseconds,
+        );
+
         const msg = await pullMessageFromQueue<Message>({
           signal: props.signal,
-          authorizationHeader: props.serviceBusAuthHeader,
-          serviceBusUri: props.serviceBusUri,
-          queueName: props.serviceBusQueueName,
+          authorizationHeader,
+          serviceBusUrl: props.serviceBusUrl,
+          serviceBusQueueName: props.serviceBusQueueName,
         });
 
         if (msg) {
           // Start the processing of the message and store the promise in an array.
-          const msgProcPromise = processMessage(props, msg);
+          const msgProcPromise = processMessage(
+            props.serviceBusUrl,
+            props.serviceBusQueueName,
+            authorizationHeader,
+            msg,
+            props.handler,
+          );
           msgProcPromises.push(msgProcPromise);
 
           // When the promise is settled, remove it from the array.
@@ -113,17 +140,31 @@ export async function processMessageQueue<Message>(
   await Promise.allSettled(outstandingMsgProcPromises);
 }
 
+/**
+ * Processes an individual message from the queue.  If the processing
+ * is successful then the message will be deleted from the queue.
+ * @param serviceBusUrl The url to the service bus.
+ * @param serviceBusQueueName The name of the service bus queue.
+ * @param authHeader An authorisation header for communicating
+ * with the service bus.
+ * @param msg The message to process.
+ * @param handler The supplied handler that will process the
+ * message or raise an error.
+ */
 async function processMessage<Message>(
-  queueProps: ProcessMessageQueueProps<Message>,
+  serviceBusUrl: string,
+  serviceBusQueueName: string,
+  authHeader: string,
   msg: PeekedMessage<Message>,
+  handler: (msg: Message) => Promise<void>,
 ): Promise<void> {
   try {
-    await queueProps.handler(msg.content);
+    await handler(msg.content);
 
     await deleteMessageFromQueue({
-      authorizationHeader: queueProps.serviceBusAuthHeader,
-      serviceBusUri: queueProps.serviceBusUri,
-      queueName: queueProps.serviceBusQueueName,
+      authorizationHeader: authHeader,
+      serviceBusUrl,
+      serviceBusQueueName: serviceBusQueueName,
       messageId: msg.messageId,
       lockToken: msg.lockToken,
     });
