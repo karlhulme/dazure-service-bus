@@ -1,4 +1,4 @@
-# DAzure-servicebus
+# dazure-service-bus
 
 A set of functions for accessing Azure Service Bus.
 
