@@ -3,7 +3,7 @@ import {
   createSharedAccessAuthHeader,
   deleteMessageFromQueue,
   pullMessageFromQueue,
-} from "../src/serviceBus/index.ts";
+} from "../src/index.ts";
 
 export function getEnvVars() {
   const testServiceBusUrl = Deno.env.get("SBUS_URL");

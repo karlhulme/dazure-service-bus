@@ -3,7 +3,7 @@ import {
   deleteMessageFromQueue,
   postMessagesToQueue,
   pullMessageFromQueue,
-} from "../src/serviceBus/index.ts";
+} from "../src/index.ts";
 import { getEnvVars } from "./shared.test.ts";
 
 Deno.test("Using an invalid authorisation header prevents a message from being posted to a queue.", async () => {

@@ -1,8 +1,5 @@
 import { assert, delay } from "../deps.ts";
-import {
-  postMessagesToQueue,
-  processMessageQueue,
-} from "../src/serviceBus/index.ts";
+import { postMessagesToQueue, processMessageQueue } from "../src/index.ts";
 import { drainQueue, getAuthHeader, getEnvVars } from "./shared.test.ts";
 
 interface NumberedMessage {

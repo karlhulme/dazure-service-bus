@@ -1,4 +1,4 @@
-import { delay } from "../../deps.ts";
+import { delay } from "../deps.ts";
 import { pullMessageFromQueue } from "./pullMessageFromQueue.ts";
 import { deleteMessageFromQueue } from "./deleteMessageFromQueue.ts";
 import { PeekedMessage } from "./PeekedMessage.ts";
@@ -20,15 +20,56 @@ const MAX_MESSAGES_WAIT_IN_MILLISECONDS = 1000 * 1;
  */
 const RETRIEVE_MESSAGE_FAILURE_WAIT_IN_MILLISECONDS = 1000 * 30;
 
+/**
+ * The properties for processing the message queue.
+ */
 interface ProcessMessageQueueProps<Message> {
+  /**
+   * A signal that indicates when the processing should be aborted.
+   */
   signal?: AbortSignal;
+
+  /**
+   * The maximum number of messages to process concurrently.
+   */
   maxConcurrentMessages?: number;
+
+  /**
+   * The url of the service bus instance, for example
+   * https://my-app.servicebus.windows.net
+   */
   serviceBusUri: string;
+
+  /**
+   * The name of the queue to process.
+   */
   serviceBusQueueName: string;
+
+  /**
+   * An authorisation header, typically generated using the
+   * createCachedSharedAccessAuthHeader.
+   */
   serviceBusAuthHeader: string;
+
+  /**
+   * A handler function that will process the message.  If
+   * the handler raises an error that the message will not
+   * be removed the queue and it will be processed again.
+   * Note that a successfully processed message may be
+   * processed a second time, because the guarantee is
+   * at-least once delivery. The handler needs to process
+   * the message within the message lock duration time which
+   * is 30 seconds by default but can be changed on the
+   * Azure portal.
+   */
   handler: (msg: Message) => Promise<void>;
 }
 
+/**
+ * Processes a message queue, invoking the given handler for
+ * each received message at least once.
+ * @param props A property bag.
+ */
 export async function processMessageQueue<Message>(
   props: ProcessMessageQueueProps<Message>,
 ): Promise<void> {

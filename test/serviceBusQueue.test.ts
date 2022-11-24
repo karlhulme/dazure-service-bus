@@ -4,7 +4,7 @@ import {
   deleteMessageFromQueue,
   postMessagesToQueue,
   pullMessageFromQueue,
-} from "../src/serviceBus/index.ts";
+} from "../src/index.ts";
 import {
   drainQueue,
   getAuthHeader,

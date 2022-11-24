@@ -1,23 +1,15 @@
-# DAzure
+# DAzure-servicebus
 
-A library of functions for accessing Azure resources.
-
-## Resources
-
-The source folder for this repo is divided up into the various Azure resources.
-Access the scripts for the specific required resource. For example:
-
-`import { postMessagesToQueue } from
-'https://github.com/karlhulme/dazure/src/serviceBus/index.ts
-
-### Service Bus
+A set of functions for accessing Azure Service Bus.
 
 Support for:
 
 - Importing a shared access policy key.
-- Generating a shared-access-signature authorization header.
+- Generating and re-using (via cache) a shared-access-signature authorization
+  header.
 - Posting a batch of messages.
 - Pulling and then subsequently deleting a message once processed.
+- Processing a message queue by providing a handler function.
 
 ## Commands
 

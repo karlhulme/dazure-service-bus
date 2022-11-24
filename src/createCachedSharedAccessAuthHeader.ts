@@ -44,9 +44,9 @@ const cache = new Map<string, CachedAuthHeader>();
  * or topic.  This function will return a cached header if there
  * is more than EXPIRY_WINDOW_IN_MILLISECONDS remaining on the
  * header.
- * @param serviceBusUri The uri to the service bus resource, such as
- * https://<resource-name>.servicebus.windows.net.
- * @param sharedAccessPolicyName The name of the shared access policy.
+ * @param serviceBusUri The uri to the service bus resource, for example
+ * https://app-name.servicebus.windows.net.
+ * @param sharedAccessPolicyName The name of a shared access policy.
  * @param cryptoKey A crypto key.
  * @param validityTimeInMilliseconds The number of milliseconds that the header
  * should be valid for.  If not supplied, then the service bus

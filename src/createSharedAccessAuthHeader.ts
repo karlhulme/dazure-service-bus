@@ -1,4 +1,4 @@
-import { encodeBase64 } from "../../deps.ts";
+import { encodeBase64 } from "../deps.ts";
 
 /**
  * Returns a string that can be used as the Authorization
