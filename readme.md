@@ -1,6 +1,6 @@
 # dazure-service-bus
 
-A set of functions for accessing Azure Service Bus.
+A set of functions for accessing Azure Service Bus..
 
 Support for:
 
